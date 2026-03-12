@@ -1,0 +1,64 @@
+version: '3'
+output: prefixed
+vars:
+  VENV_BIN: '{{if eq OS "windows"}}.venv/Scripts{{else}}.venv/bin{{end}}'
+  PYTHON: '{{.VENV_BIN}}/python'
+tasks:
+  default:
+    desc: "启动"
+    cmds:
+      - task: dev
+  dev:
+      desc: "启动开发环境"
+      cmds:
+        - "echo ✈ 启动开发环境..."
+      deps: [backend, frontend]
+  install-web:
+    desc: "安装前端依赖"
+    dir: web
+    cmds:
+      - pnpm install
+  install-server:
+    desc: "安装后端依赖"
+    dir: server
+    cmds:
+      - uv sync
+  install:
+    desc: "安装依赖"
+    cmds:
+      - task: install-web
+      - task: install-server
+  frontend:
+    desc: "启动前端"
+    dir: web
+    cmds:
+      - "echo 🚀 启动前端"
+      - pnpm run dev
+  backend:
+    desc: "启动后端"
+    dir: server
+    cmds:
+      - "echo 🚀 启动后端"
+      - "{{.PYTHON}} -m uvicorn server.app:server --reload --host 0.0.0.0"
+  stop:
+    desc: "停止后端服务 (强杀端口)"
+    cmds:
+      - "{{if eq OS \"windows\"}}stop-process -Id (Get-NetTCPConnection -LocalPort 8000).OwningProcess -Force{{else}}lsof -t -i:8000 | xargs kill -9{{end}}"
+    ignore_error: true
+  restart:
+    desc: "重启后端服务"
+    cmds:
+      - task: stop
+      - task: backend
+  build-web:
+    desc: "构建前端静态文件"
+    dir: web
+    cmds:
+      - pnpm build
+  start:
+    desc: "启动服务"
+    cmds:
+      - "echo 🚀 启动服务: 将前端打包到后端静态目录中，并启动后端服务"
+      - task: build-web
+      - "cp -r web/dist/* server/server/static/"
+      - task: backend

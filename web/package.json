@@ -1,0 +1,33 @@
+{
+  "name": "web",
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "rsbuild build",
+    "check": "biome check --write",
+    "dev": "rsbuild dev --open",
+    "format": "biome format --write",
+    "preview": "rsbuild preview",
+    "api:gen": "orval"
+  },
+  "dependencies": {
+    "antd": "^6.3.2",
+    "axios": "^1.13.6",
+    "react": "^19.2.4",
+    "react-dom": "^19.2.4",
+    "react-router": "^7.13.1"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.6",
+    "@rsbuild/core": "^1.7.3",
+    "@rsbuild/plugin-babel": "^1.1.1",
+    "@rsbuild/plugin-react": "^1.4.5",
+    "@tailwindcss/postcss": "^4.2.1",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "orval": "^8.5.3",
+    "tailwindcss": "^4.2.1",
+    "typescript": "^5.9.3"
+  }
+}
