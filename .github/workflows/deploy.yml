@@ -1,0 +1,70 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  DEPLOY_DIR: /home/apps/lark-monitor-server
+  REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+  REMOTE_PORT: ${{ secrets.REMOTE_PORT || 22 }}
+  SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # ---------- 前端构建 ----------
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: web/pnpm-lock.yaml
+
+      - name: Install frontend dependencies
+        run: pnpm install
+        working-directory: web
+
+      - name: Build frontend
+        run: pnpm build
+        working-directory: web
+
+      # ---------- 打包产物 ----------
+      - name: Prepare artifact
+        run: |
+          cp -r web/dist/* server/server/static/
+
+      # ---------- 部署到服务器 ----------
+      - name: Deploy to server
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          port: ${{ env.REMOTE_PORT }}
+          username: root
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          source: release.tar.gz
+          target: /tmp
+
+      - name: Deploy and restart
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ env.REMOTE_HOST }}
+          port: ${{ env.REMOTE_PORT }}
+          username: root
+          key: ${{ env.SSH_PRIVATE_KEY }}
+          script: |
+            mkdir -p ${{ env.DEPLOY_DIR }}
+            tar -xzf /tmp/release.tar.gz -C ${{ env.DEPLOY_DIR }}
+            rm /tmp/release.tar.gz
+            cd ${{ env.DEPLOY_DIR }} && uv sync
+            # 杀掉旧进程，重新启动
+            lsof -t -i:8000 | xargs -r kill -9 || true
+            nohup .venv/bin/uvicorn server.app:server --host 0.0.0.0 --port 8000 > uvicorn.log 2>&1 &
+
