@@ -39,7 +39,10 @@ jobs:
       # ---------- 打包产物 ----------
       - name: Prepare artifact
         run: |
+          rm -rf server/server/static/*
+          mkdir -p server/server/static
           cp -r web/dist/* server/server/static/
+          tar -czf release.tar.gz -C server .
 
       # ---------- 部署到服务器 ----------
       - name: Deploy to server

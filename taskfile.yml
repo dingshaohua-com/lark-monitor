@@ -60,5 +60,6 @@ tasks:
     cmds:
       - "echo 🚀 启动服务: 将前端打包到后端静态目录中，并启动后端服务"
       - task: build-web
+      - "rm -rf server/server/static/* && mkdir -p server/server/static"
       - "cp -r web/dist/* server/server/static/"
       - task: backend
