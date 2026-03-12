@@ -1,17 +1,23 @@
-import { lazy } from 'react'
-import { createHashRouter } from 'react-router'
-import Root from '@/components/root'
+import { createHashRouter } from 'react-router';
+import AdminLayout from '@/components/layout';
+import Root from '@/components/root';
+import { routes } from './routes';
 
 const router = createHashRouter([
   {
-    path: '/',
     Component: Root,
     children: [
-      { index: true, Component: lazy(() => import('@/pages/home')) },
-      { path: '/about', Component: lazy(() => import('@/pages/about')) },
-      { path: '/user', Component: lazy(() => import('@/pages/user')) }
-    ]
-  }
-])
+      {
+        path: '/',
+        Component: AdminLayout,
+        children: routes,
+      },
+      {
+        path: '/login',
+        lazy: () => import('@/pages/login').then((m) => ({ Component: m.default })),
+      },
+    ],
+  },
+]);
 
-export default router
+export default router;

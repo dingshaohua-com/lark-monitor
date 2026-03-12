@@ -1,6 +1,6 @@
 # router/index.py
 from fastapi import APIRouter
-from . import root, dict, user
+from . import root, dict, user, raw_msg
 
 # 创建父路由，统一添加 /api 前缀
 router = APIRouter(prefix="/api")
@@ -9,3 +9,5 @@ router = APIRouter(prefix="/api")
 router.include_router(root.router)
 router.include_router(dict.router)
 router.include_router(user.router)
+router.include_router(user.router)
+router.include_router(raw_msg.router)

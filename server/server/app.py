@@ -1,3 +1,4 @@
+import os
 from contextlib import asynccontextmanager
 from dotenv import load_dotenv
 from fastapi import FastAPI
@@ -8,15 +9,18 @@ from server.router.index import router
 from server.exception.biz_error import BizError
 from server.exception.error_handler import biz_error_handler, global_error_handler
 from server.middleware.response_wrapper import wrap_response
+from server.utils.db_helper import init_db, close_db
+from server.utils.lark_client import init_lark_client
 
 load_dotenv()
 
 
 @asynccontextmanager
 async def lifespan(_app: FastAPI):
-    # await init_db()
+    await init_db()
+    init_lark_client()
     yield
-    # await close_db()
+    await close_db()
 
 
 server = FastAPI(lifespan=lifespan)

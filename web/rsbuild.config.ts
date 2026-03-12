@@ -5,7 +5,7 @@ import { pluginReact } from '@rsbuild/plugin-react';
 // Docs: https://rsbuild.rs/config/
 export default defineConfig({
   html: {
-    title: '飞书工单系统',
+    title: '工单系统',
   },
   server: {
     // port: 3000,
