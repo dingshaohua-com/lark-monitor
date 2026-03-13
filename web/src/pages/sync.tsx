@@ -84,7 +84,7 @@ export default function Sync() {
         _params.start = dateRange[0].format('YYYY-MM-DD');
         _params.end = dateRange[1].format('YYYY-MM-DD');
       }
-      await rawMsgApi.syncApiRawMsgSyncPost(_params);
+      await rawMsgApi.syncApiRawMsgSyncPost(undefined, {data:_params});
       syncTask.done();
       fetchStatus();
     } catch (e: unknown) {

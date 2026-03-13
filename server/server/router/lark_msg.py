@@ -8,3 +8,4 @@ router = APIRouter(prefix="/lark-msg", tags=["lark-msg"])
 async def get_msgs(start: date | None = None, end: date | None = None):
     result = await lark_msg_service.get_msgs(start, end)
     return result
+

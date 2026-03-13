@@ -1,6 +1,10 @@
-import { FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined } from '@ant-design/icons';
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router';
+import { FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined, createFromIconfontCN } from '@ant-design/icons';
+
+const IconFont = createFromIconfontCN({
+  scriptUrl: '//at.alicdn.com/t/c/font_5138968_bypsploimrg.js',
+});
 
 export type RouteMeta = {
   title: string;
@@ -26,7 +30,7 @@ export const routes: AppRoute[] = [
   },
   {
     path: 'lark-msg',
-    meta: { title: '飞书消息', icon:<ReadOutlined /> },
+    meta: { title: '飞书消息', icon:<IconFont type="icon-feishu" /> },
     Component: lazy(() => import('@/pages/lark-msg')),
   },
   // {

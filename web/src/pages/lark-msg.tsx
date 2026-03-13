@@ -1,5 +1,5 @@
 import { SearchOutlined } from '@ant-design/icons';
-import { Alert, Button, Card, DatePicker, Space, Spin, theme } from 'antd';
+import { Alert, Button, Card, DatePicker, Space, Spin } from 'antd';
 import dayjs from 'dayjs';
 import { useCallback, useState } from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
@@ -9,7 +9,6 @@ import { getMsgsApiLarkMsgGet } from '@/api/endpoints/lark-msg';
 const { RangePicker } = DatePicker;
 
 export default function LarkMsg() {
-  const { token } = theme.useToken();
   const today = dayjs();
 
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([today, today]);
@@ -36,15 +35,15 @@ export default function LarkMsg() {
   }, [dateRange]);
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
+    <div className="flex flex-col gap-4 flex-1 min-h-0 overflow-hidden">
       {/* 搜索条件 */}
-      <Card title="搜索条件" style={{ flexShrink: 0 }}>
+      <Card title="搜索条件" className="shrink-0">
         <Space wrap align="center">
           <RangePicker
             value={dateRange}
             onChange={(v) => v && setDateRange(v as [dayjs.Dayjs, dayjs.Dayjs])}
             disabled={loading}
-            style={{ maxWidth: 280 }}
+            className="max-w-[280px]"
           />
           <Button
             type="primary"
@@ -58,29 +57,25 @@ export default function LarkMsg() {
       </Card>
 
       {/* 结果展示 */}
-      <div style={{ flex: 1, minHeight: 0, overflow: 'auto', display: 'flex', flexDirection: 'column' }}>
+      <div className="flex-1 min-h-0 overflow-auto flex flex-col">
         {loading && (
-          <Space style={{ padding: 24 }}>
-            <Spin />
-            <span>加载中…</span>
-          </Space>
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <Space size="middle" className="text-base">
+              <Spin size="large" />
+              <span className="text-gray-500">加载中…</span>
+            </Space>
+          </div>
         )}
 
         {error && (
-          <Alert type="error" showIcon message={error} style={{ marginBottom: 16 }} />
+          <Alert type="error" showIcon message={error} className="mb-4 shrink-0" />
         )}
 
         {!loading && data === null && !error && (
-          <div
-            style={{
-              flex: 1,
-              padding: 48,
-              textAlign: 'center',
-              color: token.colorTextDescription,
-              fontSize: 14,
-            }}
-          >
-            选择日期范围后点击「查询」获取消息
+          <div className="flex-1 flex items-center justify-center min-h-[200px]">
+            <p className="text-center text-gray-500 text-sm px-12">
+              选择日期范围后点击「查询」获取消息
+            </p>
           </div>
         )}
 
@@ -88,10 +83,10 @@ export default function LarkMsg() {
           <Card
             size="small"
             title={`共计 ${Array.isArray(data) ? data.length : 1} 条数据`}
-            style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}
+            className="flex-1 min-h-0 flex flex-col"
             bodyStyle={{ flex: 1, minHeight: 0, overflow: 'auto', padding: 0 }}
           >
-            <div style={{ height: '100%', overflow: 'auto' }}>
+            <div className="h-full overflow-auto">
               <SyntaxHighlighter
                 language="json"
                 style={oneDark}

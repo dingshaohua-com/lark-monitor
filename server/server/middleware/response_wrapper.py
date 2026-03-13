@@ -22,8 +22,8 @@ async def wrap_response(request: Request, call_next):
     except Exception as exc:
         logger.exception("未处理的异常: %s", exc)
         return JSONResponse(
-            status_code=500,
-            content={"code": 1, "msg": "服务器内部错误", "data": None},
+            status_code=200,
+            content={"code": 1, "msg": f"服务器内部错误: {exc}", "data": None},
         )
 
     content_type = response.headers.get("content-type", "")
