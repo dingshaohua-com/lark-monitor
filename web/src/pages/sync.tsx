@@ -102,12 +102,12 @@ export default function Sync() {
       cancelText: '取消',
       onOk: async () => {
         setClearing(true);
-        try {
-          await rawMsgApi.clearAllApiRawMsgAllDelete();
-          fetchStatus();
-        } finally {
-          setClearing(false);
-        }
+        // try {
+        //   await rawMsgApi.clearAllApiRawMsgAllDelete();
+        //   fetchStatus();
+        // } finally {
+        //   setClearing(false);
+        // }
       },
     });
   };

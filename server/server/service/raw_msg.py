@@ -1,13 +1,17 @@
 import logging
 import os
+from functools import partial
+from pymongo import UpdateOne
 from datetime import date, datetime, timedelta, timezone
 from traceback import print_tb
 from server.utils.date_helper import get_full_date_time
-
 from fastapi import FastAPI
-from lark_oapi.api.im.v1 import ListMessageRequest
-from server.utils.lark_client import get_lark_client
+from server.utils.lark_helper import get_lark_client, fetch_msgs
 from server.utils.db_helper import get_collection
+from server.service.lark_msg import get_msgs
+
+
+
 
 
 
@@ -23,68 +27,46 @@ def get_all(  page: int = 1,
     pass
 
 
-async def sync(
-    start: date | None = None,
-    end: date | None = None,
-) :
+async def sync_collection(collection, items_dic, _items=None, _is_last=None):
+    """同步至数据库（批量存储）。fetch_msgs 回调传入 (items_dic, items, is_last)"""
+    ops = []
+    for doc in items_dic:
+        doc["_id"] = doc.get("message_id")
+        ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+    if ops:
+       await collection.bulk_write(ops)
+
+# async def sync(start: date | None = None, end: date | None = None) :
+#     """从飞书群拉取原始消息（含话题回复）同步到表"""
+#     client = get_lark_client()
+#     start, end = get_full_date_time(start, end, timestamp=True)
+#
+#     # 第一步：拉取群聊主消息（即话题）并入库
+#     chat_id = os.environ["MONITOR_CHAT_ID"]
+#     raw_col = get_collection("raw_msg")
+#     bound_callback = partial(sync_collection, raw_col)
+#     chat_items = await fetch_msgs(client,"chat", chat_id, start, end, bound_callback)
+#
+#     # 第二步：对有 thread_id 的消息，拉取话题内的回复
+#     for msg in chat_items:
+#         thread_id = msg.get("thread_id")
+#          # 跳过主消息（通过 ID 比对或层级判断）
+#         if thread_id == msg.get("message_id"):
+#             continue
+#         if thread_id:
+#             thread_items = await fetch_msgs(client,"thread", thread_id, start, end, bound_callback)
+#             msg['reply']=thread_items
+#     return chat_items
+
+
+async def sync(start: date | None = None, end: date | None = None) :
     """从飞书群拉取原始消息（含话题回复）同步到表"""
-    # start_dt = datetime.combine(start, datetime.min.time(), tzinfo=timezone.utc) if start else now - timedelta(days=7)
-    # end_dt = datetime.combine(end, datetime.max.time(), tzinfo=timezone.utc) if end else now
-    # start_ts = str(int(start_dt.timestamp()))
-    # end_ts = str(int(end_dt.timestamp()))
+    start, end = get_full_date_time(start, end, timestamp=True)
+    raw_col = get_collection("raw_msg")
+    bound_callback = partial(sync_collection, raw_col)
+    await get_msgs(start, end, bound_callback)
+    return True
 
-
-
-
-    # chat_id = os.environ["MONITOR_CHAT_ID"]
-    # start, end = get_full_date_time(start, end, timestamp=True)
-    #  # 第一步：拉取群聊主消息
-    # builder = (
-    #     ListMessageRequest.builder()
-    #     .container_id_type("chat")
-    #     .container_id(chat_id)
-    #     .page_size(3)
-    #     .start_time(start)
-    #     .end_time(end)
-    # )
-    # response = await client.im.v1.message.alist(builder.build())
-    # data = response.data
-    # return data
-
-    client = get_lark_client()
-
-    # 第一步：拉取群聊主消息
-    chat_id = os.environ["MONITOR_CHAT_ID"]
-    chat_items = await _fetch_msgs(client,"chat", chat_id, start, end)
-    return chat_items
-
-
-async def _fetch_msgs(client, container_type: str, container_id: str, start, end):
-    print(container_type, container_id)
-    page_token: str | None = None
-    all_items: list[dict] = []
-    while True:
-        builder = (
-            ListMessageRequest.builder()
-            .container_id_type(container_type)
-            .container_id(container_id)
-            .page_size(3)
-            .start_time(start)
-            .end_time(end)
-        )
-        if page_token:
-            builder = builder.page_token(page_token)
-        response = await client.im.v1.message.alist(builder.build())
-        # print(response.data)
-        return response
-        items = response.data.items or []
-        all_items.extend(items)
-
-        # 终止条件
-        if not response.data.has_more:
-            break
-        page_token = response.data.page_token
-    return all_items
 
 
 async def clear_all():

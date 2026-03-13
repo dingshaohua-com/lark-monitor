@@ -29,6 +29,7 @@
     "@types/react-dom": "^19.2.3",
     "babel-plugin-react-compiler": "^1.0.0",
     "orval": "^8.5.3",
+    "react-syntax-highlighter": "^16.1.1",
     "tailwindcss": "^4.2.1",
     "typescript": "^5.9.3"
   }

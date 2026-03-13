@@ -10,7 +10,7 @@ from server.exception.biz_error import BizError
 from server.exception.error_handler import biz_error_handler, global_error_handler
 from server.middleware.response_wrapper import wrap_response
 from server.utils.db_helper import init_db, close_db
-from server.utils.lark_client import init_lark_client
+from server.utils.lark_helper import init_lark_client
 
 load_dotenv()
 

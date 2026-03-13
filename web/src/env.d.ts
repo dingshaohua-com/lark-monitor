@@ -9,3 +9,19 @@ declare module '*.svg?react' {
   const ReactComponent: React.FunctionComponent<React.SVGProps<SVGSVGElement>>;
   export default ReactComponent;
 }
+
+declare module 'react-syntax-highlighter' {
+  import type { ComponentType } from 'react';
+  export const Prism: ComponentType<{
+    language?: string;
+    style?: Record<string, unknown>;
+    customStyle?: React.CSSProperties;
+    showLineNumbers?: boolean;
+    wrapLongLines?: boolean;
+    children?: string;
+  }>;
+}
+
+declare module 'react-syntax-highlighter/dist/esm/styles/prism' {
+  export const oneDark: Record<string, React.CSSProperties>;
+}

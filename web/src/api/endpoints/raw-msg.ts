@@ -5,7 +5,6 @@
  * OpenAPI spec version: 0.1.0
  */
 import type {
-  ClearAllApiRawMsgAllDelete200,
   GetAllApiRawMsgGetParams,
   SyncApiRawMsgSyncPostParams
 } from '../model';
@@ -46,8 +45,8 @@ export const syncApiRawMsgSyncPost = (
  */
 export const clearAllApiRawMsgAllDelete = (
     
- options?: SecondParameter<typeof customAxiosInstance<ClearAllApiRawMsgAllDelete200>>,) => {
-      return customAxiosInstance<ClearAllApiRawMsgAllDelete200>(
+ options?: SecondParameter<typeof customAxiosInstance<unknown>>,) => {
+      return customAxiosInstance<unknown>(
       {url: `/api/raw-msg/all`, method: 'DELETE'
     },
       options);

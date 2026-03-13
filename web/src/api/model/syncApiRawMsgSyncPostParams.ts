@@ -6,18 +6,6 @@
  */
 
 export type SyncApiRawMsgSyncPostParams = {
-/**
- * @minimum 1
- */
-page?: number;
-/**
- * @minimum 1
- * @maximum 100
- */
-page_size?: number;
-keyword?: string | null;
-priority?: string | null;
-start_date?: string | null;
-end_date?: string | null;
-has_bot_reply?: string | null;
+start?: string | null;
+end?: string | null;
 };
