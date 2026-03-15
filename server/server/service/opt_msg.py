@@ -42,7 +42,7 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None):
                 doc["body"]["parsedContent"] = {"user_content": extract_msg_text(doc_body_content)}
                 ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
             else:
-                # 只同步机器人提供的工单消息
+                # 只同步机器人提供的工单消息(人提的不管，格式太乱)
                 if doc.get("sender").get('sender_type') == "app":
                     raw_text = doc_body_content.get("elements")[0][0].get("text")
                     doc["body"]["parsedContent"] = convert_work_order_content(raw_text)

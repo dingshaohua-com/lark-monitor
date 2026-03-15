@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Body, Depends
 from server.schema.raw_msg import RawMsgQuery, SyncRequest
-import server.service.raw_msg as raw_msg_service
+import server.service.opt_msg as raw_msg_service
 from datetime import date, datetime, timedelta, timezone
 
 router = APIRouter(prefix="/raw-msg", tags=["raw-msg"])
