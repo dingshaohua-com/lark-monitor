@@ -5,7 +5,7 @@ from functools import partial
 from pymongo import UpdateOne
 from datetime import date, datetime, timedelta, timezone
 from traceback import print_tb
-from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_aplay_post_to_html
+from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_reply_post_to_html
 from server.utils.date_helper import get_full_date_time
 from fastapi import FastAPI
 from server.utils.lark_helper import get_lark_client, fetch_msgs
@@ -13,6 +13,9 @@ from server.utils.db_helper import get_collection
 from server.service.lark_msg import get_msgs
 
 
+
+def get_replies():
+    pass
 
 def get_all(  page: int = 1,
     page_size: int = 20,
@@ -38,7 +41,7 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None):
         # 卡片式可交互类型的消息解析（可能是回复或主消息）
         if msg_type == "interactive":
             if is_reply:
-                print("this is aplay")
+                print("this is reply")
                 doc["body"]["parsedContent"] = {"user_content": extract_msg_text(doc_body_content)}
                 ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
             else:
@@ -48,13 +51,13 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None):
                     doc["body"]["parsedContent"] = convert_work_order_content(raw_text)
                     ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
         elif msg_type == "post":
-            print("this is aplay")
+            print("this is reply")
             doc["body"]["parsedContent"] =  {
-                "user_content": convert_aplay_post_to_html(doc_body_content.get("content"))
+                "user_content": convert_reply_post_to_html(doc_body_content.get("content"))
             }
             ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
         elif msg_type == "text":
-            print("this is aplay")
+            print("this is reply")
             doc["body"]["parsedContent"] = {"user_content": doc_body_content}
             ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
     if ops:

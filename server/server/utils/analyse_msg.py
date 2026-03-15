@@ -15,7 +15,7 @@ def convert_work_order_content(text: str) -> list[dict]:
     return result
 
 
-def convert_aplay_post_to_html(content_data):
+def convert_reply_post_to_html(content_data):
     """
     将飞书 post content 数组转为 HTML 富文本
     :param content_data: 传入的 content 字段 (列表或 JSON 字符串)
