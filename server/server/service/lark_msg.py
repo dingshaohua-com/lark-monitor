@@ -26,6 +26,6 @@ async def get_msgs(start: date | None = None, end: date | None = None, callback=
         if thread_id == msg.get("message_id"):
             continue
         if thread_id:
-            thread_items = await fetch_msgs(client,"thread", thread_id, start, end, callback)
+            thread_items = await fetch_msgs(client,"thread", thread_id, start, end, callback, parent_doc=msg) # 表明这里是回复类型的消息，把主消息传进去，方便添加是否有机器人回复用
             msg['replies']=thread_items
     return chat_items

@@ -9,7 +9,7 @@ export * from './getAllApiRawMsgGetParams';
 export * from './getDictApiDictDetailGetParams';
 export * from './getMsgsApiLarkMsgGetParams';
 export * from './hTTPValidationError';
-export * from './syncApiRawMsgSyncPostParams';
+export * from './syncRequest';
 export * from './userResponse';
 export * from './validationError';
 export * from './validationErrorCtx';

@@ -87,7 +87,7 @@ export default function AdminLayout() {
               flexShrink: 0,
             }}
           >
-            夕
+            🤣
           </div>
           {!collapsed && <span style={{ fontWeight: 600, fontSize: 15, whiteSpace: 'nowrap' }}>工单平台</span>}
         </div>

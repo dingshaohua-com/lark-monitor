@@ -24,7 +24,7 @@ def get_lark_client() -> lark.Client:
 
 
 # 自动循环获取指定日期的所有数据
-async def fetch_msgs(client, container_type: str, container_id: str, start, end, callback):
+async def fetch_msgs(client, container_type: str, container_id: str, start, end, callback, parent_doc=None):
     print(container_type, container_id)
     page_token: str | None = None
     all_items: list[dict] = []
@@ -58,7 +58,7 @@ async def fetch_msgs(client, container_type: str, container_id: str, start, end,
         items_dic = [json.loads(lark.JSON.marshal(item)) for item in items]
 
         if callback:
-            result = callback(items_dic, items, is_last)
+            result = callback(items_dic, items, is_last, parent_doc=parent_doc)
             if asyncio.iscoroutine(result):
                 await result
 

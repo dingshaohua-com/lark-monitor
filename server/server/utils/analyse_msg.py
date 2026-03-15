@@ -2,16 +2,16 @@ import re
 import json
 from server.utils.dict_registry import get as get_registry
 
-def convert_work_order_content(text: str) -> list[dict]:
-    """将工单格式的文本解析为 [{key, label, value}, ...]"""
+def convert_work_order_content(text: str) -> dict[str, str]:
+    """将工单格式的文本解析为 {key: value, ...}。"""
     work_order_map = get_registry("work_order_map") or {}
-    result = []
+    result = {}
     # 格式: 【标签】：值，每行一条
     pattern = re.compile(r"【([^】]+)】：(.*?)(?=\n【|$)", re.DOTALL)
     for label, value in pattern.findall(text):
         value = value.strip().rstrip("\n")
         key = work_order_map.get(label, label)
-        result.append({"key": key, "label": label, "value": value})
+        result[key] = value
     return result
 
 
