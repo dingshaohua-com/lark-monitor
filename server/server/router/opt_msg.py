@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Body, Depends
 from server.schema.raw_msg import RawMsgQuery, SyncRequest
 import server.service.opt_msg as raw_msg_service
-from datetime import date, datetime, timedelta, timezone
 
 router = APIRouter(prefix="/raw-msg", tags=["raw-msg"])
 
@@ -13,6 +12,12 @@ async def get_all(query: RawMsgQuery = Depends()):
         start_date=query.start_date, end_date=query.end_date,
         has_bot_reply=query.has_bot_reply,
     )
+    return result
+
+
+@router.get("/{message_id}/replies")
+async def get_replies(message_id: str):
+    result = await raw_msg_service.get_replies(message_id)
     return result
 
 
