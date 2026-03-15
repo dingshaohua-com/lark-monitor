@@ -12,7 +12,7 @@ tasks:
       desc: "启动开发环境"
       cmds:
         - "echo ✈ 启动开发环境..."
-      deps: [backend, frontend]
+      deps: [server, web]
   install-web:
     desc: "安装前端依赖"
     dir: web
@@ -28,13 +28,13 @@ tasks:
     cmds:
       - task: install-web
       - task: install-server
-  frontend:
+  web:
     desc: "启动前端"
     dir: web
     cmds:
       - "echo 🚀 启动前端"
       - pnpm run dev
-  backend:
+  server:
     desc: "启动后端"
     dir: server
     cmds:
@@ -49,7 +49,7 @@ tasks:
     desc: "重启后端服务"
     cmds:
       - task: stop
-      - task: backend
+      - task: server
   build-web:
     desc: "构建前端静态文件"
     dir: web
@@ -60,6 +60,5 @@ tasks:
     cmds:
       - "echo 🚀 启动服务: 将前端打包到后端静态目录中，并启动后端服务"
       - task: build-web
-      - "rm -rf server/server/static/* && mkdir -p server/server/static"
       - "cp -r web/dist/* server/server/static/"
-      - task: backend
+      - task: server

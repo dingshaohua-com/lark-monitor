@@ -1,17 +1,16 @@
 import logging
 import os
+import json
 from functools import partial
 from pymongo import UpdateOne
 from datetime import date, datetime, timedelta, timezone
 from traceback import print_tb
+from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_aplay_post_to_html
 from server.utils.date_helper import get_full_date_time
 from fastapi import FastAPI
 from server.utils.lark_helper import get_lark_client, fetch_msgs
 from server.utils.db_helper import get_collection
 from server.service.lark_msg import get_msgs
-
-
-
 
 
 
@@ -28,35 +27,38 @@ def get_all(  page: int = 1,
 
 
 async def sync_collection(collection, items_dic, _items=None, _is_last=None):
-    """同步至数据库（批量存储）。fetch_msgs 回调传入 (items_dic, items, is_last)"""
+    """同步至数据库（批量存储）。fetch_msgs 回调传入 (items_dic, items, is_last)， 主消息和回复的存储都会走这里"""
     ops = []
     for doc in items_dic:
         doc["_id"] = doc.get("message_id")
-        ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+        msg_type = doc.get("msg_type")
+        doc_body = doc.get("body")
+        doc_body_content = json.loads(doc_body.get("content")) # 将json字符串转为python可识别的对象
+        is_reply = bool(doc.get("parent_id"))
+        # 卡片式可交互类型的消息解析（可能是回复或主消息）
+        if msg_type == "interactive":
+            if is_reply:
+                print("this is aplay")
+                doc["body"]["parsedContent"] = {"user_content": extract_msg_text(doc_body_content)}
+                ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+            else:
+                # 只同步机器人提供的工单消息
+                if doc.get("sender").get('sender_type') == "app":
+                    raw_text = doc_body_content.get("elements")[0][0].get("text")
+                    doc["body"]["parsedContent"] = convert_work_order_content(raw_text)
+                    ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+        elif msg_type == "post":
+            print("this is aplay")
+            doc["body"]["parsedContent"] =  {
+                "user_content": convert_aplay_post_to_html(doc_body_content.get("content"))
+            }
+            ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+        elif msg_type == "text":
+            print("this is aplay")
+            doc["body"]["parsedContent"] = {"user_content": doc_body_content}
+            ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
     if ops:
        await collection.bulk_write(ops)
-
-# async def sync(start: date | None = None, end: date | None = None) :
-#     """从飞书群拉取原始消息（含话题回复）同步到表"""
-#     client = get_lark_client()
-#     start, end = get_full_date_time(start, end, timestamp=True)
-#
-#     # 第一步：拉取群聊主消息（即话题）并入库
-#     chat_id = os.environ["MONITOR_CHAT_ID"]
-#     raw_col = get_collection("raw_msg")
-#     bound_callback = partial(sync_collection, raw_col)
-#     chat_items = await fetch_msgs(client,"chat", chat_id, start, end, bound_callback)
-#
-#     # 第二步：对有 thread_id 的消息，拉取话题内的回复
-#     for msg in chat_items:
-#         thread_id = msg.get("thread_id")
-#          # 跳过主消息（通过 ID 比对或层级判断）
-#         if thread_id == msg.get("message_id"):
-#             continue
-#         if thread_id:
-#             thread_items = await fetch_msgs(client,"thread", thread_id, start, end, bound_callback)
-#             msg['reply']=thread_items
-#     return chat_items
 
 
 async def sync(start: date | None = None, end: date | None = None) :

@@ -27,5 +27,5 @@ async def get_msgs(start: date | None = None, end: date | None = None, callback=
             continue
         if thread_id:
             thread_items = await fetch_msgs(client,"thread", thread_id, start, end, callback)
-            msg['reply']=thread_items
+            msg['replies']=thread_items
     return chat_items
