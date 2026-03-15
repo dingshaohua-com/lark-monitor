@@ -33,12 +33,11 @@ export const routes: AppRoute[] = [
     meta: { title: '飞书消息', icon:<IconFont type="icon-feishu" /> },
     Component: lazy(() => import('@/pages/lark-msg')),
   },
-  // {
-  //   path: 'work-order',
-  //   meta: { title: '工单列表', icon:<ReadOutlined /> },
-  //   Component: lazy(() => import('@/pages/work-order')),
-  // },
- 
+  {
+    path: 'work-order',
+    meta: { title: '工单列表', icon:<ReadOutlined /> },
+    Component: lazy(() => import('@/pages/work-order')),
+  },
   {
     path: 'system',
     meta: { title: '系统管理', icon: <SettingOutlined /> },
