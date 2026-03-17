@@ -35,11 +35,11 @@ export function DetailModal({ open, onClose, detail, loading, workOrderDict }: D
     return entries;
   })();
 
-  const detailTitle = detailFields.user_content || '工单详情';
+  // const detailTitle = detailFields.user_content || '工单详情';
 
   return (
     <Modal
-      title={detailTitle}
+      title=''
       open={open}
       onCancel={onClose}
       footer={<Button onClick={onClose}>关闭</Button>}
@@ -118,7 +118,7 @@ export function DetailModal({ open, onClose, detail, loading, workOrderDict }: D
                     children: (
                       <div>
                         <Space size={8} style={{ marginBottom: 4 }}>
-                          <Tag color={reply.sender?.sender_type === 'user' ? 'processing' : 'default'}>
+                          <Tag color={reply.sender?.sender_type === 'user' ? token.colorPrimary : 'default'}>
                             {reply.sender?.sender_type ?? '-'}
                           </Tag>
                           <Tag color={MSG_TYPE_MAP[reply.msg_type ?? '']?.color ?? 'default'}>

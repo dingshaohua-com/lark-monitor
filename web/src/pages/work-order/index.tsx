@@ -141,7 +141,7 @@ export default function WorkOrder() {
       align: 'center',
       render: (_, record) =>
         record.ext?.isRepliedByBot ? (
-          <Tag icon={<RobotOutlined />} color="processing">是</Tag>
+          <Tag icon={<RobotOutlined />} color={token.colorPrimary}>是</Tag>
         ) : (
           <span style={{ color: token.colorTextQuaternary }}>否</span>
         ),
@@ -151,7 +151,7 @@ export default function WorkOrder() {
       key: 'action',
       width: 80,
       render: (_, record) => (
-        <Button type="link" size="small" icon={<EyeOutlined />} onClick={() => void openDetail(record)}>
+        <Button type="link" size="small" icon={<EyeOutlined />} style={{ color: token.colorPrimary }} onClick={() => void openDetail(record)}>
           查看
         </Button>
       ),
