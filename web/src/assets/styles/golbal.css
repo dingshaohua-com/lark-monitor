@@ -1,5 +1,38 @@
 @import 'tailwindcss';
 
+/* 樱花背景：强制布局半透明以透出底层 canvas */
+.app-with-sakura .ant-layout {
+  background: transparent !important;
+}
+.app-with-sakura .ant-layout-sider,
+.app-with-sakura .ant-layout-header {
+  background: rgba(255, 255, 255, 0.75) !important;
+}
+.app-with-sakura .ant-layout-content {
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+.app-with-sakura .ant-layout-sider-children,
+.app-with-sakura .ant-menu {
+  background: transparent !important;
+}
+.app-with-sakura .ant-card {
+  background: rgba(255, 255, 255, 0.82) !important;
+}
+.app-with-sakura .ant-table-wrapper,
+.app-with-sakura .ant-table,
+.app-with-sakura .ant-table-container table {
+  background: transparent !important;
+}
+.app-with-sakura .ant-table-thead > tr > th {
+  background: rgba(255, 255, 255, 0.6) !important;
+}
+.app-with-sakura .ant-table-tbody > tr > td {
+  background: rgba(255, 255, 255, 0.4) !important;
+}
+.app-with-sakura .ant-table-tbody > tr:hover > td {
+  background: rgba(255, 255, 255, 0.65) !important;
+}
+
 /* 工单详情弹窗：Descriptions 3 列固定宽度，不随内容伸缩 */
 .work-order-detail-descriptions .ant-descriptions-view {
   table-layout: fixed;

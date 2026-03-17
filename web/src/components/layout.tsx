@@ -59,7 +59,7 @@ export default function AdminLayout() {
         onCollapse={setCollapsed}
         trigger={null}
         width={220}
-        style={{ background: token.colorBgContainer, borderRight: `1px solid ${token.colorBorderSecondary}` }}
+        style={{ borderRight: `1px solid ${token.colorBorderSecondary}` }}
       >
         <div
           style={{
@@ -107,7 +107,6 @@ export default function AdminLayout() {
           style={{
             height: 56,
             padding: '0 24px',
-            background: token.colorBgContainer,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
