@@ -11,7 +11,7 @@ from server.exception.error_handler import biz_error_handler, global_error_handl
 from server.middleware.response_wrapper import wrap_response
 from server.utils.db_helper import init_db, close_db
 from server.utils.lark_helper import init_lark_client
-# from server.scheduler import start_scheduler, stop_scheduler
+from server.scheduler import start_scheduler, stop_scheduler
 
 load_dotenv()
 
@@ -20,9 +20,9 @@ load_dotenv()
 async def lifespan(_app: FastAPI):
     await init_db()
     init_lark_client()
-    # start_scheduler()
+    start_scheduler()
     yield
-    # stop_scheduler()
+    stop_scheduler()
     await close_db()
 
 
