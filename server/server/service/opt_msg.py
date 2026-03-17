@@ -1,12 +1,16 @@
 import json
+import os
 import re
 from functools import partial
 from pymongo import UpdateOne
 from datetime import date
+import httpx
 from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_reply_post_to_html
 from server.utils.db_helper import get_collection
 from server.utils.date_helper import get_date_range_epoch_ms
 from server.service.lark_msg import get_msgs
+
+ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE", "http://10.1.20.72:8000")
 
 
 async def get_replies(message_id: str):
@@ -68,6 +72,28 @@ async def get_all(  page: int = 1,
     total = await raw_col.count_documents(query)
     skip = (page - 1) * page_size
     items = await raw_col.find(query).sort("create_time", -1).skip(skip).limit(page_size).to_list(length=page_size)
+
+    # 获取机器人回复的点赞点踩情况，挂到 items 内
+    if items:
+        ticket_ids = [it.get("message_id") for it in items if it.get("message_id")]
+        if ticket_ids:
+            try:
+                async with httpx.AsyncClient(timeout=5.0) as client:
+                    r = await client.post(
+                        f"{ANNOTATE_API_BASE}/api/annotate/batch-votes",
+                        json={"ticketIds": ticket_ids},
+                    )
+                    r.raise_for_status()
+                    body = r.json()
+                    votes_list = body.get("data", []) if isinstance(body, dict) else []
+                    votes_map = {v["ticketId"]: v for v in votes_list if isinstance(v, dict) and v.get("ticketId")}
+            except Exception:
+                votes_map = {}
+            else:
+                for it in items:
+                    mid = it.get("message_id")
+                    if mid and mid in votes_map:
+                        it.setdefault("ext", {})["votes"] = votes_map[mid]
 
     return {
         "data": {

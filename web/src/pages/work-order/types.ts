@@ -21,6 +21,12 @@ export interface MessageItem {
     parsedContent?: ParsedFieldItem[] | string | Record<string, unknown>;
     typeDetail?: string;
     isRepliedByBot?: boolean;
+    votes?: {
+      upvoteCount?: number;
+      downvoteCount?: number;
+      upvotedByNames?: string[];
+      downvotedByNames?: string[];
+    };
   };
   replies?: MessageItem[];
 }

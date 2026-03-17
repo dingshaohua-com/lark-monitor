@@ -1,3 +1,4 @@
+import { DislikeOutlined, LikeOutlined } from '@ant-design/icons';
 import { Button, Card, Descriptions, Modal, Space, Tag, Timeline, theme } from 'antd';
 import type { MessageItem } from './types';
 import { MSG_TYPE_MAP, TAG_KEYS } from './constants';
@@ -86,6 +87,22 @@ export function DetailModal({ open, onClose, detail, loading, workOrderDict }: D
                 {detailFields.user_content || '-'}
               </div>
             </Card>
+            {detail.ext?.votes && (
+              <Card size="small" title="机器人回复评价" style={{ borderRadius: token.borderRadiusLG, marginBottom: 20 }}>
+                <Space size={24}>
+                  <span>
+                    <LikeOutlined style={{ color: token.colorSuccess, marginRight: 4 }} />
+                    点赞 {detail.ext.votes.upvoteCount ?? 0}
+                    {detail.ext.votes.upvotedByNames?.length ? ` (${detail.ext.votes.upvotedByNames.join('、')})` : ''}
+                  </span>
+                  <span>
+                    <DislikeOutlined style={{ color: token.colorError, marginRight: 4 }} />
+                    点踩 {detail.ext.votes.downvoteCount ?? 0}
+                    {detail.ext.votes.downvotedByNames?.length ? ` (${detail.ext.votes.downvotedByNames.join('、')})` : ''}
+                  </span>
+                </Space>
+              </Card>
+            )}
             <Card
               size="small"
               title={`回复 (${detailReplies.length})`}
