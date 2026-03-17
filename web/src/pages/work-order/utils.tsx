@@ -1,6 +1,17 @@
+import dayjs from 'dayjs';
 import { Tag, Tooltip } from 'antd';
 import type { MessageItem } from './types';
 import { PRIORITY_COLOR } from './constants';
+
+/** 格式化反馈时间：优先用 feedback_time，否则用 create_time（毫秒时间戳） */
+export const formatFeedbackTime = (feedbackTime: string | undefined, createTime?: string | number | null): string => {
+  if (feedbackTime && String(feedbackTime).trim()) return feedbackTime.trim();
+  if (createTime == null || createTime === '') return '-';
+  const ms = typeof createTime === 'number' ? createTime : Number(createTime);
+  if (!Number.isFinite(ms)) return '-';
+  const d = dayjs(ms);
+  return d.isValid() ? d.format('YYYY-MM-DD HH:mm:ss') : '-';
+};
 
 const FIELD_VALUE_MAX_LEN = 6;
 

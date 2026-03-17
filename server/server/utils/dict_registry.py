@@ -56,6 +56,7 @@ register("work_order_map", {
     "姓名": "student_name",
     "uid": "uid",
     "线上反馈时间": "feedback_time",
+    "创建时间":"create_time",
     "所属客服": "customer_service",
     "客服备注": "cs_remark",
     "文档ID": "doc_id",

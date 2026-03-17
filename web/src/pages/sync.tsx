@@ -58,7 +58,7 @@ export default function Sync() {
   const { token } = theme.useToken();
   const today = dayjs();
 
-  const [syncMode, setSyncMode] = useState<'continue' | 'range'>('continue');
+  const [syncMode, setSyncMode] = useState<'continue' | 'range'>('range');
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs]>([today, today]);
 
   const syncTask = useTaskRunner();
@@ -102,12 +102,12 @@ export default function Sync() {
       cancelText: '取消',
       onOk: async () => {
         setClearing(true);
-        // try {
-        //   await rawMsgApi.clearAllApiRawMsgAllDelete();
-        //   fetchStatus();
-        // } finally {
-        //   setClearing(false);
-        // }
+        try {
+          await rawMsgApi.clearAllApiRawMsgAllDelete();
+          fetchStatus();
+        } finally {
+          setClearing(false);
+        }
       },
     });
   };
@@ -140,7 +140,7 @@ export default function Sync() {
             optionType="button"
             buttonStyle="solid"
             options={[
-              { label: '从上次继续', value: 'continue' },
+              // { label: '从上次继续', value: 'continue' },
               { label: '指定时间段', value: 'range' },
             ]}
           />

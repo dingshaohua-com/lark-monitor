@@ -14,7 +14,26 @@ from server.service.lark_msg import get_msgs
 
 logger = logging.getLogger(__name__)
 
-ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE")+'/annotate'
+
+# 这样会跳过：
+# 已撤回消息（"This message was recalled"）
+# 合并转发消息（"Merged and Forwarded Message"）
+# 其他无法解析为 JSON 的 content
+def _parse_body_content(content):
+    """安全解析 body.content：空串、非 JSON 字符串直接返回，避免 json.loads 报错"""
+    if isinstance(content, (dict, list)):
+        return content
+    if not isinstance(content, str):
+        return None
+    content = content.strip()
+    if not content:
+        return None
+    if content in ("This message was recalled", "Merged and Forwarded Message"):
+        return None
+    try:
+        return json.loads(content)
+    except json.JSONDecodeError:
+        return content if content else None
 
 
 async def get_replies(message_id: str):
@@ -76,6 +95,7 @@ async def get_all(  page: int = 1,
     total = await raw_col.count_documents(query)
     skip = (page - 1) * page_size
     items = await raw_col.find(query).sort("create_time", -1).skip(skip).limit(page_size).to_list(length=page_size)
+    ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE")+'/sq'
 
     # 获取机器人回复的点赞点踩情况，挂到 items 内
     if items:
@@ -118,9 +138,9 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
         doc["_id"] = doc.get("message_id")
         msg_type = doc.get("msg_type")
         doc_body = doc.get("body")
-        if (doc_body or {}).get("content") == "This message was recalled":
+        doc_body_content = _parse_body_content((doc_body or {}).get("content"))
+        if doc_body_content is None or not isinstance(doc_body_content, dict):
             continue
-        doc_body_content = json.loads(doc_body.get("content"))
         is_reply = bool(doc.get("parent_id"))
         is_replied_by_bot = is_reply and doc.get("sender", {}).get("sender_type") == "app"
         if is_replied_by_bot:

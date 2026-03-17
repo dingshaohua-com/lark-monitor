@@ -8,7 +8,7 @@ import { getAllApiRawMsgGet, getRepliesApiRawMsgMessageIdRepliesGet } from '@/ap
 import type { ReplyListResponse, WorkOrderListResponse } from './types';
 import type { MessageItem, WorkOrderDict, WorkOrderQuery } from './types';
 import { PRIORITY_COLOR, priorityOptions } from './constants';
-import { getParsedFieldMap, getParsedText } from './utils';
+import { formatFeedbackTime, getParsedFieldMap, getParsedText } from './utils';
 import { DetailModal } from './detail-modal';
 
 const { RangePicker } = DatePicker;
@@ -133,7 +133,7 @@ export default function WorkOrder() {
     {
       title: '反馈时间',
       width: 160,
-      render: (_, record) => getParsedFieldMap(record).feedback_time || '-',
+      render: (_, record) => formatFeedbackTime(getParsedFieldMap(record).feedback_time, record.create_time),
     },
     {
       title: '机器人参与',
