@@ -14,7 +14,7 @@ from server.service.lark_msg import get_msgs
 
 logger = logging.getLogger(__name__)
 
-ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE", "http://10.1.20.72:8000")
+ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE")+'/annotate'
 
 
 async def get_replies(message_id: str):
