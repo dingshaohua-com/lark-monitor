@@ -1,1 +1,10 @@
 @import 'tailwindcss';
+
+/* 工单详情弹窗：Descriptions 3 列固定宽度，不随内容伸缩 */
+.work-order-detail-descriptions .ant-descriptions-view {
+  table-layout: fixed;
+}
+.work-order-detail-descriptions .ant-descriptions-item-label,
+.work-order-detail-descriptions .ant-descriptions-item-content {
+  width: 16.666%; /* 3 列 × 2 单元格 = 6 列等分 */
+}

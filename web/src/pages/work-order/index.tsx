@@ -1,150 +1,17 @@
 import { EyeOutlined, ReloadOutlined, RobotOutlined, SearchOutlined } from '@ant-design/icons';
 import { useTableScrolly } from '@/components/use-table-scrolly';
-import { Button, Card, Col, DatePicker, Descriptions, Form, Input, Modal, Pagination, Row, Select, Space, Table, Tag, Timeline, theme } from 'antd';
+import { Button, Card, Col, DatePicker, Form, Input, Pagination, Row, Select, Table, Tag, theme } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { getDictApiDictDetailGet } from '@/api/endpoints/dict';
 import { getAllApiRawMsgGet, getRepliesApiRawMsgMessageIdRepliesGet } from '@/api/endpoints/raw-msg';
-import type { GetAllApiRawMsgGetParams } from '@/api/model';
+import type { ReplyListResponse, WorkOrderListResponse } from './types';
+import type { MessageItem, WorkOrderDict, WorkOrderQuery } from './types';
+import { PRIORITY_COLOR, priorityOptions } from './constants';
+import { getParsedFieldMap, getParsedText } from './utils';
+import { DetailModal } from './detail-modal';
 
 const { RangePicker } = DatePicker;
-
-const PRIORITY_COLOR: Record<string, string> = {
-  P0: 'red',
-  P1: 'volcano',
-  P2: 'orange',
-  P3: 'blue',
-  P4: 'default',
-};
-
-const MSG_TYPE_MAP: Record<string, { label: string; color: string }> = {
-  text: { label: '文本', color: 'blue' },
-  post: { label: '富文本', color: 'purple' },
-  interactive: { label: '卡片', color: 'orange' },
-  image: { label: '图片', color: 'green' },
-};
-
-const TAG_KEYS = ['tag_l1', 'tag_l2', 'tag_l3'];
-
-const priorityOptions = [
-  { label: 'P0', value: 'P0' },
-  { label: 'P1', value: 'P1' },
-  { label: 'P2', value: 'P2' },
-  { label: 'P3', value: 'P3' },
-  { label: 'P4', value: 'P4' },
-];
-
-type WorkOrderQuery = GetAllApiRawMsgGetParams;
-type WorkOrderDict = Record<string, string>;
-
-interface ParsedFieldItem {
-  key?: string;
-  label?: string;
-  value?: string;
-}
-
-interface MessageItem {
-  message_id: string;
-  msg_type?: string;
-  create_time?: string;
-  thread_message_count?: number;
-  sender?: {
-    sender_type?: string;
-  };
-  ext?: {
-    parsedContent?: ParsedFieldItem[] | string | Record<string, unknown>;
-    typeDetail?: string;
-    isRepliedByBot?: boolean;
-  };
-  replies?: MessageItem[];
-}
-
-interface WorkOrderListData {
-  items: MessageItem[];
-  total: number;
-  page: number;
-  page_size: number;
-}
-
-interface WorkOrderListResponse {
-  data: WorkOrderListData;
-}
-
-interface ReplyListData {
-  message_id: string;
-  items: MessageItem[];
-  total: number;
-}
-
-interface ReplyListResponse {
-  data: ReplyListData;
-}
-
-const getParsedFieldMap = (message?: MessageItem | null): Record<string, string> => {
-  const parsedContent = message?.ext?.parsedContent;
-  if (Array.isArray(parsedContent)) {
-    return parsedContent.reduce<Record<string, string>>((acc, item) => {
-      if (item?.key) {
-        acc[item.key] = item.value ?? '';
-      }
-      return acc;
-    }, {});
-  }
-  if (parsedContent && typeof parsedContent === 'object') {
-    return Object.entries(parsedContent).reduce<Record<string, string>>((acc, [key, value]) => {
-      acc[key] = value == null ? '' : String(value);
-      return acc;
-    }, {});
-  }
-  return {};
-};
-
-const getParsedText = (message?: MessageItem | null): string => {
-  const parsedContent = message?.ext?.parsedContent;
-  if (typeof parsedContent === 'string') {
-    return parsedContent;
-  }
-  if (Array.isArray(parsedContent)) {
-    return parsedContent
-      .map((item) => item?.value?.trim())
-      .filter(Boolean)
-      .join('\n');
-  }
-  if (parsedContent && typeof parsedContent === 'object') {
-    return Object.values(parsedContent)
-      .map((value) => (value == null ? '' : String(value).trim()))
-      .filter(Boolean)
-      .join('\n');
-  }
-  return '';
-};
-
-const renderReplyContent = (message?: MessageItem | null, isAppCard?: boolean) => {
-  const parsedContent = message?.ext?.parsedContent;
-  if ((message?.ext?.typeDetail === 'reply_interactive' || message?.ext?.typeDetail === 'reply_post') && typeof parsedContent === 'string') {
-    return <div dangerouslySetInnerHTML={{ __html: parsedContent }} />;
-  }
-  const text = getParsedText(message) || '-';
-  if (text) {
-    return (
-      <div style={{ padding: '8px 12px', background: 'rgba(0,0,0,0.04)', borderRadius: 6, fontSize: 13, lineHeight: 1.6 }}>
-        {text}
-      </div>
-    );
-  }
-  return text;
-};
-
-const renderFieldValue = (fieldKey: string, value: string) => {
-  if (!value) return '-';
-  if (fieldKey === 'priority') {
-    return <Tag color={PRIORITY_COLOR[value] ?? 'default'}>{value}</Tag>;
-  }
-  if (fieldKey === 'online_version_url') {
-    return <a href={value} target="_blank" rel="noopener noreferrer">点此查看</a>;
-  }
-  return value;
-};
 
 export default function WorkOrder() {
   const { token } = theme.useToken();
@@ -179,7 +46,7 @@ export default function WorkOrder() {
   const fetchData = useCallback(async (p: number, size: number, filters: WorkOrderQuery = {}) => {
     setLoading(true);
     try {
-      const res = await getAllApiRawMsgGet({ ...filters, page: p, page_size: size }) as WorkOrderListResponse;
+      const res = (await getAllApiRawMsgGet({ ...filters, page: p, page_size: size })) as WorkOrderListResponse;
       const data = res.data;
       setItems(data?.items ?? []);
       setTotal(data?.total ?? 0);
@@ -217,7 +84,7 @@ export default function WorkOrder() {
     setDetail(item);
     setDetailLoading(true);
     try {
-      const res = await getRepliesApiRawMsgMessageIdRepliesGet(item.message_id) as ReplyListResponse;
+      const res = (await getRepliesApiRawMsgMessageIdRepliesGet(item.message_id)) as ReplyListResponse;
       setDetail({ ...item, replies: res.data?.items ?? [] });
     } finally {
       setDetailLoading(false);
@@ -291,30 +158,6 @@ export default function WorkOrder() {
     },
   ];
 
-  const detailFields = useMemo(() => getParsedFieldMap(detail), [detail]);
-  const detailReplies = detail?.replies ?? [];
-  const detailFieldEntries = useMemo(
-    () => {
-      let entries: [string, string][] = [];
-      if (Object.keys(workOrderDict).length > 0) {
-        entries = Object.entries(workOrderDict)
-          .filter(([, fieldKey]) => fieldKey !== 'user_content' && !TAG_KEYS.includes(fieldKey) && Boolean(detailFields[fieldKey]));
-      } else {
-        const parsedContent = Array.isArray(detail?.ext?.parsedContent) ? detail.ext.parsedContent : [];
-        entries = parsedContent
-          .filter((item) => item?.key && item.key !== 'user_content' && !TAG_KEYS.includes(item.key ?? '') && item.value)
-          .map((item) => [item.label ?? item.key ?? '', item.key ?? ''] as [string, string]);
-      }
-      const tagsMerged = [detailFields.tag_l1, detailFields.tag_l2, detailFields.tag_l3].filter(Boolean).join(' / ');
-      if (tagsMerged) {
-        entries.push(['标签', '__tags']);
-      }
-      return entries;
-    },
-    [detail, detailFields, workOrderDict],
-  );
-  const detailTitle = detailFields.user_content || '工单详情';
-
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 16, height: '100%', overflow: 'hidden' }}>
       <Card size="small" style={{ borderRadius: token.borderRadiusLG, flexShrink: 0 }} className="!py-2">
@@ -387,66 +230,13 @@ export default function WorkOrder() {
         </div>
       </Card>
 
-      <Modal
-        title={detailTitle}
+      <DetailModal
         open={detailOpen}
-        onCancel={() => setDetailOpen(false)}
-        footer={<Button onClick={() => setDetailOpen(false)}>关闭</Button>}
-        width={800}
-        destroyOnHidden
-        styles={{ body: { maxHeight: '70vh', overflowY: 'auto' } }}
-      >
-        {detail && (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <Descriptions column={2} size="small" bordered labelStyle={{ whiteSpace: 'nowrap', width: 92 }}>
-              <Descriptions.Item label="工单ID" span={2}>
-                <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{detail.message_id}</span>
-              </Descriptions.Item>
-              {detailFieldEntries.map(([label, fieldKey]) => (
-                <Descriptions.Item key={fieldKey} label={label} span={fieldKey === 'cs_remark' ? 2 : 1}>
-                  {renderFieldValue(fieldKey, fieldKey === '__tags' ? [detailFields.tag_l1, detailFields.tag_l2, detailFields.tag_l3].filter(Boolean).join(' / ') : detailFields[fieldKey])}
-                </Descriptions.Item>
-              ))}
-            </Descriptions>
-
-            <Card size="small" title="用户原文" style={{ borderRadius: token.borderRadiusLG }}>
-              <div style={{ maxHeight: 160, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.8 }}>
-                {detailFields.user_content || '-'}
-              </div>
-            </Card>
-
-            <Card
-              size="small"
-              title={`回复 (${detailReplies.length})`}
-              style={{ borderRadius: token.borderRadiusLG }}
-              styles={{ body: { maxHeight: 300, overflowY: 'auto' } }}
-            >
-              {detailLoading ? (
-                <div style={{ textAlign: 'center', padding: 16, color: token.colorTextQuaternary }}>加载中...</div>
-              ) : detailReplies.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: 16, color: token.colorTextQuaternary }}>暂无回复</div>
-              ) : (
-                <Timeline
-                  items={detailReplies.map((reply) => ({
-                    children: (
-                      <div>
-                        <Space size={8} style={{ marginBottom: 4 }}>
-                          <Tag color={reply.sender?.sender_type === 'user' ? 'processing' : 'default'}>{reply.sender?.sender_type ?? '-'}</Tag>
-                          <Tag color={MSG_TYPE_MAP[reply.msg_type ?? '']?.color ?? 'default'}>{MSG_TYPE_MAP[reply.msg_type ?? '']?.label ?? reply.msg_type ?? '-'}</Tag>
-                          <span style={{ fontFamily: 'monospace', fontSize: 12, color: token.colorTextSecondary }}>{reply.create_time}</span>
-                        </Space>
-                        <div style={{ whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.6 }}>
-                          {renderReplyContent(reply, reply.msg_type === 'interactive' && reply.sender?.sender_type === 'app')}
-                        </div>
-                      </div>
-                    ),
-                  }))}
-                />
-              )}
-            </Card>
-          </div>
-        )}
-      </Modal>
+        onClose={() => setDetailOpen(false)}
+        detail={detail}
+        loading={detailLoading}
+        workOrderDict={workOrderDict}
+      />
     </div>
   );
 }

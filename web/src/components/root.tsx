@@ -1,4 +1,5 @@
-import { Spin } from 'antd';
+import { ConfigProvider, Spin } from 'antd';
+import zhCN from 'antd/locale/zh_CN';
 import { Suspense } from 'react';
 import { Outlet } from 'react-router';
 
@@ -10,8 +11,10 @@ const fallback = (
 
 export default function Root(): React.JSX.Element {
   return (
-    <Suspense fallback={fallback}>
-      <Outlet />
-    </Suspense>
+    <ConfigProvider locale={zhCN}>
+      <Suspense fallback={fallback}>
+        <Outlet />
+      </Suspense>
+    </ConfigProvider>
   );
 }
