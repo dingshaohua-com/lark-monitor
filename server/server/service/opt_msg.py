@@ -1,4 +1,5 @@
 import json
+import logging
 import os
 import re
 from functools import partial
@@ -8,7 +9,10 @@ import httpx
 from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_reply_post_to_html
 from server.utils.db_helper import get_collection
 from server.utils.date_helper import get_date_range_epoch_ms
+from server.utils.dedup import deduplicate_docs
 from server.service.lark_msg import get_msgs
+
+logger = logging.getLogger(__name__)
 
 ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE", "http://10.1.20.72:8000")
 
@@ -109,18 +113,18 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
     """同步至数据库（批量存储）。fetch_msgs 回调传入 (items_dic, items, is_last)， 主消息和回复的存储都会走这里"""
     ops = []
     has_bot_reply = False
+    new_main_docs = []
     for doc in items_dic:
         doc["_id"] = doc.get("message_id")
         msg_type = doc.get("msg_type")
         doc_body = doc.get("body")
         if (doc_body or {}).get("content") == "This message was recalled":
             continue
-        doc_body_content = json.loads(doc_body.get("content")) # 将json字符串转为python可识别的对象
+        doc_body_content = json.loads(doc_body.get("content"))
         is_reply = bool(doc.get("parent_id"))
         is_replied_by_bot = is_reply and doc.get("sender", {}).get("sender_type") == "app"
         if is_replied_by_bot:
             has_bot_reply = True
-        # 卡片式可交互类型的消息解析（可能是回复或主消息）
         if msg_type == "interactive":
             if is_reply:
                 title = doc_body_content.get("title") or ""
@@ -132,7 +136,6 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
                 }
                 ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
             else:
-                # 只同步机器人提供的工单消息(人提的不管，格式太乱)
                 if doc.get("sender").get('sender_type') == "app":
                     raw_text = doc_body_content.get("elements")[0][0].get("text")
                     parsedContent=convert_work_order_content(raw_text)
@@ -140,6 +143,7 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
                         "parsedContent": parsedContent,
                         "typeDetail":"thread_interactive_app"
                     }
+                    new_main_docs.append(doc)
                     ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
         elif msg_type == "post":
             doc["ext"] = {
@@ -153,10 +157,44 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
                 "typeDetail": "reply_text"
             }
             ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+
+    if new_main_docs:
+        await _mark_repeat_docs(collection, new_main_docs)
+
     if parent_doc and has_bot_reply:
         ops.append(UpdateOne({"_id": parent_doc["message_id"]}, {"$set": {"ext.isRepliedByBot": True}}))
     if ops:
        await collection.bulk_write(ops)
+
+
+async def _mark_repeat_docs(collection, new_docs: list[dict]):
+    """对新入库的主消息做去重标记：与库中已有主消息比对，相似的标记 isRepeat + repeatList"""
+    new_ids = [d["_id"] for d in new_docs]
+    existing_docs = await collection.find(
+        {"ext.typeDetail": "thread_interactive_app", "_id": {"$nin": new_ids}}
+    ).to_list(length=None)
+
+    all_docs = existing_docs + new_docs
+    if len(all_docs) < 2:
+        return
+
+    try:
+        groups = deduplicate_docs(all_docs)
+    except Exception:
+        logger.exception("去重计算失败，跳过标记")
+        return
+
+    existing_count = len(existing_docs)
+    for group in groups:
+        if len(group) <= 1:
+            continue
+        group_ids = [all_docs[i]["_id"] for i in group]
+        for idx in group:
+            if idx >= existing_count:
+                doc = all_docs[idx]
+                repeat_ids = [gid for gid in group_ids if gid != doc["_id"]]
+                doc["ext"]["isRepeat"] = True
+                doc["ext"]["repeatList"] = repeat_ids
 
 
 async def sync(start: date | None = None, end: date | None = None) :
