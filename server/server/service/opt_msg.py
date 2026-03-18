@@ -87,8 +87,10 @@ async def get_all(  page: int = 1,
     elif len(time_conditions) == 2:
         extra_conditions.append({"$expr": {"$and": time_conditions}})
 
-    if has_bot_reply in {"yes", "no"}:
-        query["ext.isRepliedByBot"] = has_bot_reply == "yes"
+    if has_bot_reply == "yes":
+        query["ext.isRepliedByBot"] = True
+    elif has_bot_reply == "no":
+        query["ext.isRepliedByBot"] = {"$ne": True}
     if extra_conditions:
         query["$and"] = extra_conditions
 
