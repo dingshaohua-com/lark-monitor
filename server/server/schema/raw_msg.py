@@ -10,6 +10,11 @@ class SyncRequest(BaseModel):
     end: Optional[date] = Field(None, description="结束日期 YYYY-MM-DD")
 
 
+class StatsQuery(BaseModel):
+    start_date: Optional[str] = Field(None, description="起始日期 YYYY-MM-DD")
+    end_date: Optional[str] = Field(None, description="结束日期 YYYY-MM-DD")
+
+
 class RawMsgQuery(BaseModel):
     page: int = Field(1, ge=1, description="页码")
     page_size: int = Field(20, ge=1, le=100, description="每页数量")

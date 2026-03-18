@@ -4,7 +4,7 @@ import os
 import re
 from functools import partial
 from pymongo import UpdateOne
-from datetime import date
+from datetime import date, timedelta
 import httpx
 from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_reply_post_to_html
 from server.utils.db_helper import get_collection
@@ -217,6 +217,99 @@ async def _mark_repeat_docs(collection, new_docs: list[dict]):
                 repeat_ids = [gid for gid in group_ids if gid != doc["_id"]]
                 doc["ext"]["isRepeat"] = True
                 doc["ext"]["repeatList"] = repeat_ids
+
+
+async def get_stats(start_date: str | None = None, end_date: str | None = None):
+    """统计分析：当前周期 vs 前一周期的机器人参与率、点赞/点踩数据"""
+    raw_col = get_collection("raw_msg")
+
+    today = date.today()
+    if not start_date:
+        start_date = (today - timedelta(days=6)).isoformat()
+    if not end_date:
+        end_date = today.isoformat()
+
+    start_dt = date.fromisoformat(start_date)
+    end_dt = date.fromisoformat(end_date)
+    period_days = (end_dt - start_dt).days + 1
+
+    prev_end_dt = start_dt - timedelta(days=1)
+    prev_start_dt = prev_end_dt - timedelta(days=period_days - 1)
+
+    current = await _calc_period_stats(raw_col, start_date, end_date)
+    previous = await _calc_period_stats(
+        raw_col, prev_start_dt.isoformat(), prev_end_dt.isoformat()
+    )
+
+    return {
+        "data": {
+            "current": current,
+            "previous": previous,
+            "period_days": period_days,
+        }
+    }
+
+
+async def _calc_period_stats(raw_col, start_date: str, end_date: str) -> dict:
+    """计算单个周期内的统计数据"""
+    start_ms, end_ms = get_date_range_epoch_ms(start_date, end_date)
+
+    base_query: dict = {
+        "$or": [
+            {"parent_id": {"$exists": False}},
+            {"parent_id": None},
+            {"parent_id": ""},
+        ]
+    }
+    create_time_expr = {"$toLong": {"$ifNull": ["$create_time", "0"]}}
+    time_conds = []
+    if start_ms is not None:
+        time_conds.append({"$gte": [create_time_expr, start_ms]})
+    if end_ms is not None:
+        time_conds.append({"$lte": [create_time_expr, end_ms]})
+    if time_conds:
+        expr = {"$and": time_conds} if len(time_conds) > 1 else time_conds[0]
+        base_query["$expr"] = expr
+
+    total = await raw_col.count_documents(base_query)
+
+    bot_query = {**base_query, "ext.isRepliedByBot": True}
+    bot_replied = await raw_col.count_documents(bot_query)
+
+    upvote_total = 0
+    downvote_total = 0
+
+    if bot_replied > 0:
+        bot_msgs = await raw_col.find(
+            bot_query, {"message_id": 1}
+        ).to_list(length=None)
+        ticket_ids = [m["message_id"] for m in bot_msgs if m.get("message_id")]
+        if ticket_ids:
+            try:
+                api_base = os.getenv("ANNOTATE_API_BASE", "")
+                async with httpx.AsyncClient(timeout=10.0) as client:
+                    r = await client.post(
+                        f"{api_base}/sq/api/annotate/batch-votes",
+                        json={"ticketIds": ticket_ids},
+                    )
+                    r.raise_for_status()
+                    body = r.json()
+                    votes_list = (
+                        body.get("data", []) if isinstance(body, dict) else []
+                    )
+                    for v in votes_list:
+                        if isinstance(v, dict):
+                            upvote_total += v.get("upvoteCount", 0) or 0
+                            downvote_total += v.get("downvoteCount", 0) or 0
+            except Exception:
+                logger.exception("获取投票数据失败")
+
+    return {
+        "total": total,
+        "bot_replied": bot_replied,
+        "upvote_total": upvote_total,
+        "downvote_total": downvote_total,
+    }
 
 
 async def sync(start: date | None = None, end: date | None = None) :

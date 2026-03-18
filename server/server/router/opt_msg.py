@@ -1,8 +1,17 @@
 from fastapi import APIRouter, Body, Depends
-from server.schema.raw_msg import RawMsgQuery, SyncRequest
+from server.schema.raw_msg import RawMsgQuery, StatsQuery, SyncRequest
 import server.service.opt_msg as raw_msg_service
 
 router = APIRouter(prefix="/raw-msg", tags=["raw-msg"])
+
+
+@router.get("/stats")
+async def stats(query: StatsQuery = Depends()):
+    return await raw_msg_service.get_stats(
+        start_date=query.start_date,
+        end_date=query.end_date,
+    )
+
 
 @router.get("/")
 async def get_all(query: RawMsgQuery = Depends()):
