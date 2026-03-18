@@ -59,12 +59,14 @@ async def get_all(  page: int = 1,
     """查询原始数据接口"""
     raw_col = get_collection("raw_msg")
 
-    query = {
+    # parent_id 过滤不可靠（飞书线程回复可能只有 thread_id 没有 parent_id），用 typeDetail 双重保障
+    query: dict = {
         "$or": [
             {"parent_id": {"$exists": False}},
             {"parent_id": None},
             {"parent_id": ""},
-        ]
+        ],
+        "ext.typeDetail": "thread_interactive_app",
     }
     extra_conditions = []
 
