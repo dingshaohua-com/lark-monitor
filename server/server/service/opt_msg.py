@@ -49,14 +49,17 @@ async def get_replies(message_id: str):
     }
 
 
-async def get_all(  page: int = 1,
-    page_size: int = 20,
+async def get_all(
+    page: int | None = None,
+    page_size: int | None = None,
     keyword: str | None = None,
     priority: str | None = None,
     start_date: str | None = None,
     end_date: str | None = None,
-    has_bot_reply: str | None = None):
-    """查询原始数据接口"""
+    has_bot_reply: str | None = None,
+    with_reply: bool | None = None,
+):
+    """查询原始数据接口。page/page_size 不传则返回全部。"""
     raw_col = get_collection("raw_msg")
 
     # parent_id 过滤不可靠（飞书线程回复可能只有 thread_id 没有 parent_id），用 typeDetail 双重保障
@@ -97,8 +100,13 @@ async def get_all(  page: int = 1,
         query["$and"] = extra_conditions
 
     total = await raw_col.count_documents(query)
-    skip = (page - 1) * page_size
-    items = await raw_col.find(query).sort("create_time", -1).skip(skip).limit(page_size).to_list(length=page_size)
+
+    paginated = page is not None and page_size is not None
+    cursor = raw_col.find(query).sort("create_time", -1)
+    if paginated:
+        cursor = cursor.skip((page - 1) * page_size).limit(page_size)
+    items = await cursor.to_list(length=page_size if paginated else None)
+
     ANNOTATE_API_BASE = os.getenv("ANNOTATE_API_BASE")+'/sq'
 
     # 获取机器人回复的点赞点踩情况，挂到 items 内
@@ -122,6 +130,13 @@ async def get_all(  page: int = 1,
                     mid = it.get("message_id")
                     if mid and mid in votes_map:
                         it.setdefault("ext", {})["votes"] = votes_map[mid]
+
+    if with_reply and items:
+        for it in items:
+            mid = it.get("message_id")
+            if mid:
+                result = await get_replies(mid)
+                it.setdefault("ext", {})["replies"] = result["data"]["items"]
 
     return {
         "data": {

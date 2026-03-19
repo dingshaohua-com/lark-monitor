@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router';
-import { FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined, createFromIconfontCN } from '@ant-design/icons';
+import { DownloadOutlined, FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined, createFromIconfontCN } from '@ant-design/icons';
 
 const IconFont = createFromIconfontCN({
   scriptUrl: '//at.alicdn.com/t/c/font_5138968_bypsploimrg.js',
@@ -37,6 +37,11 @@ export const routes: AppRoute[] = [
     path: 'work-order',
     meta: { title: '工单列表', icon:<ReadOutlined /> },
     Component: lazy(() => import('@/pages/work-order')),
+  },
+  {
+    path: 'export',
+    meta: { title: '下载导出', icon: <DownloadOutlined /> },
+    Component: lazy(() => import('@/pages/export')),
   },
   {
     path: 'system',

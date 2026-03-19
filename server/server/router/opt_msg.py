@@ -20,6 +20,7 @@ async def get_all(query: RawMsgQuery = Depends()):
         keyword=query.keyword, priority=query.priority,
         start_date=query.start_date, end_date=query.end_date,
         has_bot_reply=query.has_bot_reply,
+        with_reply=query.with_reply,
     )
     return result
 
