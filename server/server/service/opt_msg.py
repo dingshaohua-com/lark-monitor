@@ -9,6 +9,7 @@ import httpx
 from server.utils.analyse_msg import extract_msg_text, convert_work_order_content, convert_reply_post_to_html
 from server.utils.db_helper import get_collection
 from server.utils.date_helper import get_date_range_epoch_ms
+from server.utils.classify import classify_issue_type
 from server.utils.dedup import deduplicate_docs
 from server.service.lark_msg import get_msgs
 
@@ -131,12 +132,15 @@ async def get_all(
                     if mid and mid in votes_map:
                         it.setdefault("ext", {})["votes"] = votes_map[mid]
 
-    if with_reply and items:
+    # 批量获取回复，用于 issueType 分类（以及 with_reply 挂载）
+    if items:
+        reply_map = await _batch_get_replies(raw_col, items)
         for it in items:
-            mid = it.get("message_id")
-            if mid:
-                result = await get_replies(mid)
-                it.setdefault("ext", {})["replies"] = result["data"]["items"]
+            tid = it.get("thread_id")
+            item_replies = reply_map.get(tid, [])
+            it.setdefault("ext", {})["issueType"] = classify_issue_type(item_replies)
+            if with_reply:
+                it["ext"]["replies"] = item_replies
 
     return {
         "data": {
@@ -146,6 +150,22 @@ async def get_all(
             "page_size": page_size,
         }
     }
+
+
+async def _batch_get_replies(raw_col, items: list[dict]) -> dict[str, list]:
+    """批量获取主消息的回复，按 thread_id 分组返回"""
+    thread_ids = list({it.get("thread_id") for it in items if it.get("thread_id")})
+    main_ids = [it["_id"] for it in items]
+    if not thread_ids:
+        return {}
+    all_replies = await raw_col.find({
+        "thread_id": {"$in": thread_ids},
+        "_id": {"$nin": main_ids},
+    }).sort("create_time", 1).to_list(length=None)
+    reply_map: dict[str, list] = {}
+    for r in all_replies:
+        reply_map.setdefault(r.get("thread_id"), []).append(r)
+    return reply_map
 
 
 async def sync_collection(collection, items_dic, _items=None, _is_last=None, parent_doc=None):

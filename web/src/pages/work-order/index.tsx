@@ -136,6 +136,17 @@ export default function WorkOrder() {
       render: (_, record) => formatFeedbackTime(getParsedFieldMap(record).feedback_time, record.create_time),
     },
     {
+      title: '问题类型',
+      width: 100,
+      align: 'center',
+      render: (_, record) => {
+        const t = record.ext?.issueType as string | undefined;
+        if (!t || t === '待定') return <Tag>待定</Tag>;
+        if (t === '技术问题') return <Tag color="red">技术</Tag>;
+        return <Tag color="green">非技术</Tag>;
+      },
+    },
+    {
       title: '机器人参与',
       width: 100,
       align: 'center',
