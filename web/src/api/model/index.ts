@@ -9,6 +9,7 @@ export * from './getAllApiRawMsgGetParams';
 export * from './getDictApiDictDetailGetParams';
 export * from './getMsgsApiLarkMsgGetParams';
 export * from './hTTPValidationError';
+export * from './statsApiRawMsgStatsGetParams';
 export * from './syncRequest';
 export * from './userResponse';
 export * from './validationError';

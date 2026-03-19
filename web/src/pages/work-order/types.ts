@@ -18,6 +18,7 @@ export interface MessageItem {
     sender_type?: string;
   };
   ext?: {
+    issueType?: string;
     parsedContent?: ParsedFieldItem[] | string | Record<string, unknown>;
     typeDetail?: string;
     isRepliedByBot?: boolean;

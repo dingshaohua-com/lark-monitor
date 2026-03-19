@@ -6,6 +6,7 @@
  */
 import type {
   GetAllApiRawMsgGetParams,
+  StatsApiRawMsgStatsGetParams,
   SyncRequest
 } from '../model';
 
@@ -16,6 +17,18 @@ import { customAxiosInstance } from '../api.base';
 type SecondParameter<T extends (...args: never) => unknown> = Parameters<T>[1];
 
 
+  /**
+ * @summary Stats
+ */
+export const statsApiRawMsgStatsGet = (
+    params?: StatsApiRawMsgStatsGetParams,
+ options?: SecondParameter<typeof customAxiosInstance<unknown>>,) => {
+      return customAxiosInstance<unknown>(
+      {url: `/api/raw-msg/stats`, method: 'GET',
+        params
+    },
+      options);
+    }
   /**
  * @summary Get All
  */
@@ -63,7 +76,8 @@ export const clearAllApiRawMsgAllDelete = (
     },
       options);
     }
-  export type GetAllApiRawMsgGetResult = NonNullable<Awaited<ReturnType<typeof getAllApiRawMsgGet>>>
+  export type StatsApiRawMsgStatsGetResult = NonNullable<Awaited<ReturnType<typeof statsApiRawMsgStatsGet>>>
+export type GetAllApiRawMsgGetResult = NonNullable<Awaited<ReturnType<typeof getAllApiRawMsgGet>>>
 export type GetRepliesApiRawMsgMessageIdRepliesGetResult = NonNullable<Awaited<ReturnType<typeof getRepliesApiRawMsgMessageIdRepliesGet>>>
 export type SyncApiRawMsgSyncPostResult = NonNullable<Awaited<ReturnType<typeof syncApiRawMsgSyncPost>>>
 export type ClearAllApiRawMsgAllDeleteResult = NonNullable<Awaited<ReturnType<typeof clearAllApiRawMsgAllDelete>>>

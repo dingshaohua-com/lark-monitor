@@ -6,18 +6,12 @@
  */
 
 export type GetAllApiRawMsgGetParams = {
-/**
- * @minimum 1
- */
-page?: number;
-/**
- * @minimum 1
- * @maximum 100
- */
-page_size?: number;
+page?: number | null;
+page_size?: number | null;
 keyword?: string | null;
 priority?: string | null;
 start_date?: string | null;
 end_date?: string | null;
 has_bot_reply?: string | null;
+with_reply?: boolean | null;
 };
