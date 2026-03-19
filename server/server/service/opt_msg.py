@@ -341,11 +341,21 @@ async def _calc_period_stats(raw_col, start_date: str, end_date: str) -> dict:
             except Exception:
                 logger.exception("获取投票数据失败")
 
+    # 问题类型分布
+    issue_counts = {"技术问题": 0, "非技术问题": 0, "待定": 0}
+    if total > 0:
+        main_msgs = await raw_col.find(base_query).to_list(length=None)
+        reply_map = await _batch_get_replies(raw_col, main_msgs)
+        for msg in main_msgs:
+            it = classify_issue_type(reply_map.get(msg.get("thread_id"), []))
+            issue_counts[it] = issue_counts.get(it, 0) + 1
+
     return {
         "total": total,
         "bot_replied": bot_replied,
         "upvote_total": upvote_total,
         "downvote_total": downvote_total,
+        "issue_counts": issue_counts,
     }
 
 

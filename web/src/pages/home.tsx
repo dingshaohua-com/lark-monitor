@@ -12,6 +12,7 @@ interface PeriodStats {
   bot_replied: number;
   upvote_total: number;
   downvote_total: number;
+  issue_counts: Record<string, number>;
 }
 
 interface StatsData {
@@ -72,6 +73,50 @@ function useGauge(rate: number, color: string, bgColor: string) {
       ],
     });
   }, [rate, color, bgColor]);
+
+  useEffect(() => {
+    const chart = chartRef.current;
+    if (!chart) return;
+    const ro = new ResizeObserver(() => chart.resize());
+    if (ref.current) ro.observe(ref.current);
+    return () => ro.disconnect();
+  }, []);
+
+  return ref;
+}
+
+const ISSUE_COLORS: Record<string, string> = {
+  '技术问题': '#f5222d',
+  '非技术问题': '#52c41a',
+  '待定': '#d9d9d9',
+};
+
+function usePie(data: { name: string; value: number }[]) {
+  const ref = useRef<HTMLDivElement>(null);
+  const chartRef = useRef<echarts.ECharts | null>(null);
+
+  useEffect(() => {
+    if (!ref.current) return;
+    if (!chartRef.current) {
+      chartRef.current = echarts.init(ref.current);
+    }
+    chartRef.current.setOption({
+      tooltip: { trigger: 'item', formatter: '{b}: {c} ({d}%)' },
+      legend: { bottom: 0, itemWidth: 12, itemHeight: 12, textStyle: { fontSize: 13 } },
+      series: [
+        {
+          type: 'pie',
+          radius: ['45%', '70%'],
+          center: ['50%', '45%'],
+          avoidLabelOverlap: false,
+          itemStyle: { borderRadius: 6, borderColor: '#fff', borderWidth: 2 },
+          label: { show: true, formatter: '{d}%', fontSize: 12 },
+          data: data.map((d) => ({ ...d, itemStyle: { color: ISSUE_COLORS[d.name] ?? '#8c8c8c' } })),
+          animationDuration: 800,
+        },
+      ],
+    });
+  }, [data]);
 
   useEffect(() => {
     const chart = chartRef.current;
@@ -160,8 +205,12 @@ export default function Home() {
 
   // 默认不自动查询，用户点击查询按钮后触发
 
-  const cur = stats?.current ?? { total: 0, bot_replied: 0, upvote_total: 0, downvote_total: 0 };
-  const prev = stats?.previous ?? { total: 0, bot_replied: 0, upvote_total: 0, downvote_total: 0 };
+  const emptyCounts = { '技术问题': 0, '非技术问题': 0, '待定': 0 };
+  const cur = stats?.current ?? { total: 0, bot_replied: 0, upvote_total: 0, downvote_total: 0, issue_counts: emptyCounts };
+  const prev = stats?.previous ?? { total: 0, bot_replied: 0, upvote_total: 0, downvote_total: 0, issue_counts: emptyCounts };
+
+  const issueData = Object.entries(cur.issue_counts ?? emptyCounts).map(([name, value]) => ({ name, value }));
+  const pieRef = usePie(stats ? issueData : []);
 
   const botRate = calcRate(cur.bot_replied, cur.total);
   const prevBotRate = calcRate(prev.bot_replied, prev.total);
@@ -237,6 +286,15 @@ export default function Home() {
               />
             </div>
           </div>
+          <Card
+            style={{ borderRadius: token.borderRadiusLG, marginTop: 16 }}
+            styles={{ body: { display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '20px 24px' } }}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: token.colorTextHeading, textAlign: 'center', marginBottom: 4 }}>
+              问题类型分布
+            </div>
+            <div ref={pieRef} style={{ width: '100%', maxWidth: 420, height: 280 }} />
+          </Card>
         </Spin>
       ) : (
         <Card style={{ borderRadius: token.borderRadiusLG, flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
