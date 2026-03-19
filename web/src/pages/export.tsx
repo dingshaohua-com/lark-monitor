@@ -1,4 +1,4 @@
-import { CheckOutlined, DownloadOutlined, MessageOutlined } from '@ant-design/icons';
+import { BarChartOutlined, CheckOutlined, DownloadOutlined, MessageOutlined } from '@ant-design/icons';
 import { Button, Card, Checkbox, DatePicker, Space, theme } from 'antd';
 import dayjs from 'dayjs';
 import { useState } from 'react';
@@ -13,7 +13,27 @@ interface ExportResponse {
   };
 }
 
-function triggerDownload(data: unknown[], filename: string) {
+interface StatsResponse {
+  data: {
+    current: {
+      total: number;
+      bot_replied: number;
+      upvote_total: number;
+      downvote_total: number;
+      issue_counts: Record<string, number>;
+    };
+    previous: {
+      total: number;
+      bot_replied: number;
+      upvote_total: number;
+      downvote_total: number;
+      issue_counts: Record<string, number>;
+    };
+    period_days: number;
+  };
+}
+
+function triggerDownload(data: unknown, filename: string) {
   const json = JSON.stringify(data, null, 2);
   const blob = new Blob([json], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
@@ -29,6 +49,7 @@ export default function Export() {
   const today = dayjs();
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs, dayjs.Dayjs] | null>([today.subtract(6, 'day'), today]);
   const [withReply, setWithReply] = useState(true);
+  const [withStats, setWithStats] = useState(true);
   const [loading, setLoading] = useState(false);
   const [lastResult, setLastResult] = useState<{ count: number; filename: string } | null>(null);
 
@@ -50,8 +71,17 @@ export default function Export() {
       )) as ExportResponse;
 
       const items = res.data?.items ?? [];
+      let exportData: unknown = items;
+
+      if (withStats) {
+        const statsRes = (await customAxiosInstance<unknown>(
+          { url: '/api/raw-msg/stats', method: 'GET', params: { start_date: params.start_date, end_date: params.end_date } },
+        )) as StatsResponse;
+        exportData = { statistics: statsRes.data, items };
+      }
+
       const filename = `工单导出_${params.start_date}_${params.end_date}${withReply ? '_含回复' : ''}.json`;
-      triggerDownload(items, filename);
+      triggerDownload(exportData, filename);
       setLastResult({ count: items.length, filename });
     } catch {
       /* handled by interceptor */
@@ -78,15 +108,26 @@ export default function Export() {
             />
           </div>
 
-          <Checkbox
-            checked={withReply}
-            onChange={(e) => setWithReply(e.target.checked)}
-          >
-            <Space size={4}>
-              <MessageOutlined />
-              <span>包含对应回复</span>
-            </Space>
-          </Checkbox>
+          <Space direction="vertical" size={8}>
+            <Checkbox
+              checked={withReply}
+              onChange={(e) => setWithReply(e.target.checked)}
+            >
+              <Space size={4}>
+                <MessageOutlined />
+                <span>包含对应回复</span>
+              </Space>
+            </Checkbox>
+            <Checkbox
+              checked={withStats}
+              onChange={(e) => setWithStats(e.target.checked)}
+            >
+              <Space size={4}>
+                <BarChartOutlined />
+                <span>导出统计信息</span>
+              </Space>
+            </Checkbox>
+          </Space>
 
           <Button
             type="primary"
