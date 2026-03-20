@@ -1,6 +1,6 @@
 import { lazy } from 'react';
 import type { RouteObject } from 'react-router';
-import { DownloadOutlined, FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined, createFromIconfontCN } from '@ant-design/icons';
+import { CloudUploadOutlined, DownloadOutlined, FundViewOutlined, HomeOutlined, ReadOutlined, SettingOutlined, SyncOutlined, TeamOutlined, createFromIconfontCN } from '@ant-design/icons';
 
 const IconFont = createFromIconfontCN({
   scriptUrl: '//at.alicdn.com/t/c/font_5138968_bypsploimrg.js',
@@ -42,6 +42,11 @@ export const routes: AppRoute[] = [
     path: 'export',
     meta: { title: '下载导出', icon: <DownloadOutlined /> },
     Component: lazy(() => import('@/pages/export')),
+  },
+  {
+    path: 'upload-bitable',
+    meta: { title: '上传表格', icon: <CloudUploadOutlined /> },
+    Component: lazy(() => import('@/pages/upload-bitable')),
   },
   {
     path: 'system',

@@ -57,34 +57,40 @@ export function DetailModal({ open, onClose, detail, loading, workOrderDict }: D
     >
       {detail && (
         <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0, overflow: 'hidden', gap: 16, padding: 24 }}>
-          <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: 24, paddingBottom: 12, borderRadius: token.borderRadiusLG, boxShadow: '0 0 12px rgba(0,0,0,0.1)' }}>
-            <Descriptions
-              className="work-order-detail-descriptions"
-              column={3}
-              size="small"
-              bordered
-              labelStyle={{ whiteSpace: 'nowrap', width: 92 }}
-            >
-              <Descriptions.Item label="工单ID" span={3}>
-                <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{detail.message_id}</span>
-              </Descriptions.Item>
-              {detailFieldEntries.map(([label, fieldKey]) => (
-                <Descriptions.Item key={fieldKey} label={label} span={fieldKey === 'cs_remark' ? 3 : 1}>
-                  {renderFieldValue(
-                    fieldKey,
-                    fieldKey === '__tags'
-                      ? [detailFields.tag_l1, detailFields.tag_l2, detailFields.tag_l3].filter(Boolean).join(' / ')
-                      : detailFields[fieldKey],
-                  )}
+          {detailFieldEntries.length > 0 && (
+            <div style={{ flexShrink: 0, maxHeight: '40%', overflowY: 'auto', padding: 24, paddingBottom: 12, borderRadius: token.borderRadiusLG, boxShadow: '0 0 12px rgba(0,0,0,0.1)' }}>
+              <Descriptions
+                className="work-order-detail-descriptions"
+                column={3}
+                size="small"
+                bordered
+                labelStyle={{ whiteSpace: 'nowrap', width: 92 }}
+              >
+                <Descriptions.Item label="工单ID" span={3}>
+                  <span style={{ fontFamily: 'monospace', fontSize: 12 }}>{detail.message_id}</span>
                 </Descriptions.Item>
-              ))}
-            </Descriptions>
-          </div>
+                {detailFieldEntries.map(([label, fieldKey]) => (
+                  <Descriptions.Item key={fieldKey} label={label} span={fieldKey === 'cs_remark' ? 3 : 1}>
+                    {renderFieldValue(
+                      fieldKey,
+                      fieldKey === '__tags'
+                        ? [detailFields.tag_l1, detailFields.tag_l2, detailFields.tag_l3].filter(Boolean).join(' / ')
+                        : detailFields[fieldKey],
+                    )}
+                  </Descriptions.Item>
+                ))}
+              </Descriptions>
+            </div>
+          )}
 
           <div style={{ flex: 1, minHeight: 0, overflowY: 'auto', padding: '24px', borderRadius: token.borderRadiusLG, boxShadow: '0 0 12px rgba(0,0,0,0.1)' }}>
             <Card size="small" title="用户原文" style={{ borderRadius: token.borderRadiusLG, marginBottom: 20 }}>
               <div style={{ maxHeight: 160, overflowY: 'auto', whiteSpace: 'pre-wrap', wordBreak: 'break-all', lineHeight: 1.8 }}>
-                {detailFields.user_content || '-'}
+                {typeof detail.ext?.parsedContent === 'string' ? (
+                  <div dangerouslySetInnerHTML={{ __html: detail.ext.parsedContent }} />
+                ) : (
+                  detailFields.user_content || detailFields.text || '-'
+                )}
               </div>
             </Card>
             {detail.ext?.votes && (

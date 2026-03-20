@@ -120,7 +120,7 @@ export default function Sync() {
           <Space>
             <DatabaseOutlined style={{ color: token.colorPrimary }} />
             <span style={{ fontWeight: 600 }}>原始数据</span>
-            <Statistic value={status?.total ?? '-'} suffix={status ? '条' : undefined} styles={{ content: { fontSize: 14, fontWeight: 600, color: token.colorPrimary, lineHeight: 'inherit' } }} style={{ display: 'inline-flex', marginLeft: 4 }} />
+            {/* <Statistic value={status?.total ?? '-'} suffix={status ? '条' : undefined} styles={{ content: { fontSize: 14, fontWeight: 600, color: token.colorPrimary, lineHeight: 'inherit' } }} style={{ display: 'inline-flex', marginLeft: 4 }} /> */}
           </Space>
         }
         extra={

@@ -70,13 +70,16 @@ async def get_all(
             {"parent_id": None},
             {"parent_id": ""},
         ],
-        "ext.typeDetail": "thread_interactive_app",
+        "ext.typeDetail": {"$in": ["thread_interactive_app", "thread_post_user", "thread_text_user"]},
     }
     extra_conditions = []
 
     if keyword and keyword.strip():
         keyword_regex = {"$regex": re.escape(keyword.strip()), "$options": "i"}
-        query["ext.parsedContent.user_content"] = keyword_regex
+        extra_conditions.append({"$or": [
+            {"ext.parsedContent.user_content": keyword_regex},
+            {"ext.rawText": keyword_regex},
+        ]})
 
     if priority:
         query["ext.parsedContent.priority"] = priority
@@ -185,8 +188,8 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
         if is_replied_by_bot:
             has_bot_reply = True
         if msg_type == "interactive":
+            title = doc_body_content.get("title") or ""
             if is_reply:
-                title = doc_body_content.get("title") or ""
                 elements_html = convert_reply_post_to_html(doc_body_content.get("elements"))
                 parsed_content = "\n".join(p for p in [title, elements_html] if p)
                 doc["ext"]={
@@ -200,22 +203,44 @@ async def sync_collection(collection, items_dic, _items=None, _is_last=None, par
                     parsedContent=convert_work_order_content(raw_text)
                     doc["ext"] = {
                         "parsedContent": parsedContent,
-                        "typeDetail":"thread_interactive_app"
+                        "typeDetail":"thread_interactive_app",
+                        "rawText": title+"\n"+raw_text,
                     }
                     new_main_docs.append(doc)
                     ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
         elif msg_type == "post":
-            doc["ext"] = {
-                "parsedContent":convert_reply_post_to_html(doc_body_content.get("content")),
-                "typeDetail": "reply_post"
-            }
-            ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+            if is_reply:
+                doc["ext"] = {
+                    "parsedContent": convert_reply_post_to_html(doc_body_content.get("content")),
+                    "typeDetail": "reply_post"
+                }
+                ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+            else:
+                title = (doc_body_content.get("title") or "").strip()
+                raw_text = extract_msg_text(doc_body_content.get("content"))
+                doc["ext"] = {
+                    "parsedContent": convert_reply_post_to_html(doc_body_content.get("content")),
+                    "typeDetail": "thread_post_user",
+                    "rawText": (title + "\n" + raw_text).strip() if raw_text else title,
+                }
+                new_main_docs.append(doc)
+                ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
         elif msg_type == "text":
-            doc["ext"] = {
-                "parsedContent": doc_body_content,
-                "typeDetail": "reply_text"
-            }
-            ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+            if is_reply:
+                doc["ext"] = {
+                    "parsedContent": doc_body_content,
+                    "typeDetail": "reply_text"
+                }
+                ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
+            else:
+                raw_text = (doc_body_content.get("text") or "").strip()
+                doc["ext"] = {
+                    "parsedContent": doc_body_content,
+                    "typeDetail": "thread_text_user",
+                    "rawText": raw_text,
+                }
+                new_main_docs.append(doc)
+                ops.append(UpdateOne({"_id": doc["_id"]}, {"$set": doc}, upsert=True))
 
     if new_main_docs:
         await _mark_repeat_docs(collection, new_main_docs)
@@ -230,7 +255,7 @@ async def _mark_repeat_docs(collection, new_docs: list[dict]):
     """对新入库的主消息做去重标记：与库中已有主消息比对，相似的标记 isRepeat + repeatList"""
     new_ids = [d["_id"] for d in new_docs]
     existing_docs = await collection.find(
-        {"ext.typeDetail": "thread_interactive_app", "_id": {"$nin": new_ids}}
+        {"ext.typeDetail": {"$in": ["thread_interactive_app", "thread_post_user", "thread_text_user"]}, "_id": {"$nin": new_ids}}
     ).to_list(length=None)
 
     all_docs = existing_docs + new_docs

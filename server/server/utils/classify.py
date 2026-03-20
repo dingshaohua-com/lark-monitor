@@ -7,6 +7,8 @@
 
 import re
 
+from server.utils.analyse_msg import extract_reply_document_text
+
 # ── 关键词表（按需增删）──────────────────────────────────
 
 TECH_KEYWORDS = [
@@ -40,13 +42,8 @@ PENDING_KEYWORDS = [
 # ── 文本提取 ─────────────────────────────────────────────
 
 def extract_reply_text(reply: dict) -> str:
-    """从回复文档中提取纯文本（兼容 HTML 字符串、dict、纯字符串）"""
-    parsed = reply.get("ext", {}).get("parsedContent")
-    if isinstance(parsed, dict):
-        return parsed.get("text", "")
-    if isinstance(parsed, str):
-        return re.sub(r"<[^>]+>", "", parsed)
-    return ""
+    """从回复文档中提取纯文本（与多维表格导出一致：优先 body 原始 JSON）"""
+    return extract_reply_document_text(reply)
 
 
 # ── 分类函数 ─────────────────────────────────────────────

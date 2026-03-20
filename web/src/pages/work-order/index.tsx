@@ -106,7 +106,13 @@ export default function WorkOrder() {
       title: '用户原文',
       width: 220,
       ellipsis: true,
-      render: (_, record) => getParsedFieldMap(record).user_content || getParsedText(record) || '-',
+      render: (_, record) => {
+        const fields = getParsedFieldMap(record);
+        if (fields.user_content) return fields.user_content;
+        const text = getParsedText(record);
+        if (text) return text.replace(/<[^>]+>/g, '');
+        return '-';
+      },
     },
     {
       title: '分类',
