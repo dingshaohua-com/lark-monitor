@@ -1,6 +1,6 @@
 # Python Web Project
 
-全栈 Web 应用模板，前后端分离开发，一键构建部署。
+全栈 Web 应用模板，前后端分离开发，一键构建部署！
 
 - **后端**：FastAPI + Uvicorn（Python）
 - **前端**：React + Ant Design + TailwindCSS（TypeScript）
